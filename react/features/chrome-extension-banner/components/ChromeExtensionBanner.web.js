@@ -35,7 +35,7 @@ type Props = {
     /**
      * An array containing info for identifying a chrome extension
      */
-    chromeExtensionsInfo: Array<Object>,
+    chromeExtensionsInfo: ?Array<Object>,
 
     /**
      * Whether I am the current recorder.
@@ -111,7 +111,11 @@ class ChromeExtensionBanner extends PureComponent<Props, State> {
             logger.info('Chrome extension URL found.');
         }
 
-        if (this.props.chromeExtensionsInfo.length && !prevProps.chromeExtensionsInfo.length) {
+        const { chromeExtensionsInfo } = this.props;
+        const { chromeExtensionsInfo: prevChromeExtensionsInfo } = prevProps;
+
+        if (Array.isArray(chromeExtensionsInfo) && chromeExtensionsInfo.length > 0
+                && (!Array.isArray(prevChromeExtensionsInfo) || prevChromeExtensionsInfo.length === 0)) {
             logger.info('Chrome extension(s) info found.');
         }
 
@@ -170,6 +174,12 @@ class ChromeExtensionBanner extends PureComponent<Props, State> {
      * @returns {Promise[]}
      */
     _checkExtensionsInstalled() {
+        const { chromeExtensionsInfo } = this.props;
+
+        if (!Array.isArray(chromeExtensionsInfo)) {
+            return Promise.resolve();
+        }
+
         const isExtensionInstalled = info => new Promise(resolve => {
             const img = new Image();
 
@@ -184,7 +194,7 @@ class ChromeExtensionBanner extends PureComponent<Props, State> {
         const extensionInstalledFunction = info => isExtensionInstalled(info);
 
         return Promise.all(
-            this.props.chromeExtensionsInfo.map(info => extensionInstalledFunction(info))
+            chromeExtensionsInfo.map(info => extensionInstalledFunction(info))
         );
     }
 
@@ -294,7 +304,7 @@ const _mapStateToProps = state => {
 
     return {
         chromeExtensionUrl: bannerCfg.url,
-        chromeExtensionsInfo: bannerCfg.chromeExtensionsInfo || [],
+        chromeExtensionsInfo: bannerCfg.chromeExtensionsInfo,
         conference: getCurrentConference(state),
         iAmRecorder: state['features/base/config'].iAmRecorder
     };
